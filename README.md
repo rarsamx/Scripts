@@ -1,19 +1,15 @@
-# setMultimonitorBackground
-Sets the background in a multimonitor set up under Cinammon with either one image spanned across or one image per monitor
+# rarsaScripts
 
-It receives only one parameter which can be
-- A single image file name : The script resizes and shaves the image to fit the screeens
-- A directory with potential files: the script selects randomly one file per monitor.
+This is a collection of scripts that I have created to help me with my day to day usage of linux.
 
-Either
-setMultimonitorBackground <imagefile>
-  or
-setMultimonitorBackground <directory>
-  
-If the parameter is a directory, the script will choose randomly one file per monitor.
+I learned something new when I wrote each of them. From the most simple scripts to those a bit more complex. In fact, sometimes the one liners were the harder to write.
 
-Note: Files are scaled and shaved to fit the display area without loosing aspect radio.
+My goal is to create code that is clean, follows standards and is easy to understand. If you see me breaking any of those goals, please let me know.
 
-Requires:
-  ImageMagick
-  xrandr
+Raul Suarez
+
+# Index
+1. [setMultiMonitorBackground](setMultiMonitorBackground.sh): Sets the background in a multimonitor set up under Cinammon with either one image spanned across or one image per monitor
+
+
+
