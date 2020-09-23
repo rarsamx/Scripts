@@ -14,7 +14,13 @@
 # Author: Raul Suarez
 # https://www.usingfoss.com/
 
+#====== VALIDATE DEPENDENCIES ===
+
+command -v gsettings >/dev/null 2>&1 || { echo >&2 "This script only works on systems which rely on gsettings.  Aborting."; exit 1; }
+command -v xrandr >/dev/null 2>&1 || { echo >&2 "This script only works on systems which rely on xrandr.  Aborting."; exit 1; }
 command -v identify >/dev/null 2>&1 || { echo >&2 "Please install 'imagemagick'.  Aborting."; exit 1; }
+
+#====== GLOBAL VARIABLES ===
 
 PARAM="${1}"
 VALID=1
@@ -23,6 +29,8 @@ OUTIMG=/home/papa/.cinnamon/backgrounds/multiMonitorBackground.jpg
 
 MONITORS=()
 SCREENGEOMETRY=""
+
+#====== FUNCTIONS ===
 
 showHelp () {
     echo 'Usage: multiMonitorBackground [IMAGEFILE] | [IMAGEDIRECTORY]
@@ -108,7 +116,6 @@ gsettings set org.cinnamon.desktop.background picture-options "spanned"
 gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
 }
 
-#=======
 expandSingleImage () {
     FILE="${1}"
     convert "${FILE}" -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} ${OUTIMG}
@@ -123,9 +130,7 @@ assembleOneImagePerMonitor () {
     cd - &>> /dev/null
 }
 
-#======
-
-#[ "${PARAM}" -eq "-h" ] || [ "${PARAM}" -eq "--help" ] && showHelp && exit
+#====== MAIN BODY OF THE SCRIPT ===
 
 isParameterValid
 if [ ${VALID} -eq 0 ]; then
