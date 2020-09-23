@@ -88,13 +88,13 @@ getMonitorsGeometry () {
     IFS=$SAVEIFS
 }
 
-createBaseImage () {
-    convert -size ${SCREENGEOMETRY} xc:skyblue ${OUTIMG}
-}
-
 assembleBackgroundImage () {
     local MONITOR
     local TEMPIMG=$(mktemp --suffix=.jpg -p /tmp tmpXXX)
+    local TEMPOUT=$(mktemp --suffix=.jpg -p /tmp tmpXXX)
+
+    # Creates the blank base image
+    convert -size ${SCREENGEOMETRY} xc:skyblue ${TEMPOUT}
 
     # From the directory select as many random files as there are monitors
     NUMMONITORS=${#MONITORS[@]}
@@ -105,10 +105,11 @@ assembleBackgroundImage () {
     do
         GEOMETRY=$(echo ${MONITOR} | cut -s -d " " -f 1)
         OFFSET=$(echo ${MONITOR} | cut -s -d " " -f 2)
-        convert "${FILES[$((i++))]}" -scale ${GEOMETRY}^ -gravity center -extent ${GEOMETRY} ${TEMPIMG}
-        composite -geometry ${OFFSET} ${TEMPIMG} ${OUTIMG} ${OUTIMG}
+        convert "${FILES[$((i++))]}" -auto-orient -scale ${GEOMETRY}^ -gravity center -extent ${GEOMETRY} ${TEMPIMG}
+        composite -geometry ${OFFSET} ${TEMPIMG} ${TEMPOUT} ${TEMPOUT}
     done
-    rm ${TEMPIMG}
+    rm "${TEMPIMG}"
+    mv "${TEMPOUT}" "${OUTIMG}"
 }
 
 setBackground () {
@@ -118,14 +119,13 @@ gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f 
 
 expandSingleImage () {
     FILE="${1}"
-    convert "${FILE}" -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} ${OUTIMG}
+    convert "${FILE}" -auto-orient -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} "${OUTIMG}"
 }
 
 assembleOneImagePerMonitor () {
     cd "${PARAM}"
 
     getMonitorsGeometry
-    createBaseImage
     assembleBackgroundImage
     cd - &>> /dev/null
 }
