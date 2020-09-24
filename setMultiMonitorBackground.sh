@@ -185,6 +185,12 @@ getMonitorsGeometry () {
     IFS=$SAVEIFS
 }
 
+selectRandomImages () {
+    # From the directory select as many random files as there are monitors
+    NUMMONITORS=${#MONITORS[@]}
+    FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMMONITORS} | sed "s/\n/ /"))
+}
+
 assembleBackgroundImage () {
     local MONITOR
     local TEMPIMG=$(mktemp --suffix=.jpg -p /tmp tmpXXX)
@@ -192,10 +198,6 @@ assembleBackgroundImage () {
 
     # Creates the blank base image
     convert -size ${SCREENGEOMETRY} xc:skyblue ${TEMPOUT}
-
-    # From the directory select as many random files as there are monitors
-    NUMMONITORS=${#MONITORS[@]}
-    FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMMONITORS} | sed "s/\n/ /"))
 
     i=0
     for MONITOR in "${MONITORS[@]}"
@@ -230,6 +232,7 @@ expandRandomImage () {
 
 assembleOneImagePerMonitor () {
     getMonitorsGeometry
+    [ -z "${FILES}" ] && selectRandomImages
     assembleBackgroundImage
 }
 
@@ -239,7 +242,8 @@ readParameters $@
 
 if ${VALID} ; then
     getScreenGeometry
-    if [ -f "${FILES[0]}" ] ; then expandSingleImage "${FILES[0]}"
+#    if [ -f "${FILES[0]}" ] ; then expandSingleImage "${FILES[0]}"
+    if [ ${#FILES[@]} -eq 1 ] ; then expandSingleImage "${FILES[0]}"
     elif ${SINGLEIMG} ; then expandRandomImage 
     else assembleOneImagePerMonitor 
     fi
