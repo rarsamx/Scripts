@@ -21,7 +21,7 @@ command -v xrandr >/dev/null 2>&1 || { echo >&2 "This script only works on syste
 command -v identify >/dev/null 2>&1 || { echo >&2 "Please install 'imagemagick'.  Aborting."; exit 1; }
 
 #====== GLOBAL VARIABLES ===
-
+VERSION=0.2.0
 VALID=true
 
 OUTIMG=/home/papa/.cinnamon/backgrounds/multiMonitorBackground.jpg
@@ -82,6 +82,7 @@ readParameters () {
             h)  showHelp
                 exit 0
                 ;;
+            v)  echo ${VERSION}
             d)  DIRECTORY="$OPTARG"
                 ;;
             s)  SINGLEIMG=true
