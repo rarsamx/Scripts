@@ -36,6 +36,8 @@ SCREENGEOMETRY=""
 DIRECTORY=""
 SINGLEIMG=false
 VERBOSE=false
+LOOP=false
+INTERVAL=""
 
 declare -a FILES=()
 
@@ -65,6 +67,7 @@ It can receive the following parameters:
  -s            Span a single FILE across monitors.  
                If no FILE is passed, and the parameter -s is present, a random
                file from the DIRECTORY is displayed.
+ -t MINUTES    Time in MINUTES to refresh the background       
  -version      Displays the version number
  -verbose      Displays additional information
     
@@ -89,11 +92,18 @@ https://www.usingfoss.com/
 }
 
 readParameters () {
+    DIRECTORY=""
+    SINGLEIMG=false
+    VERBOSE=false
+    LOOP=false
+    INTERVAL=""
+    FILES=()
+
     while [ $# -gt 0 ]
     do
         unset OPTIND
         unset OPTARG
-        while getopts hsv:d:  options
+        while getopts hsv:d:t:  options
         do
         case $options in
             h)  showHelp
@@ -113,6 +123,9 @@ readParameters () {
                 ;;
             s)  SINGLEIMG=true
                 ;;
+            t)  INTERVAL=$((OPTARG * 60))
+                LOOP=true
+                ;;
             *)  exit 1
         esac
      done
@@ -126,6 +139,7 @@ readParameters () {
     ${VERBOSE} && echo "Directory : ${DIRECTORY}"
     ${VERBOSE} && [ -n "${FILES}" ] && echo "Files : ${FILES[@]}"
     ${VERBOSE} && echo "Single image : ${SINGLEIMG}"
+    ${VERBOSE} && ${LOOP} && echo "Refresh every : $((INTERVAL / 60)) minutes"
 
     validateParameters
     [ -z "${DIRECTORY}" ] && DIRECTORY="."
@@ -190,6 +204,7 @@ getMonitorsGeometry () {
     local MONITOR
     SAVEIFS=$IFS
     IFS=$(echo -en "\n\b")
+    MONITORS=()
 
     for MONITOR in $(xrandr --listmonitors | grep "^ [0-9]" | cut -s -d " " -f 4)
     do
@@ -203,8 +218,6 @@ getMonitorsGeometry () {
 # From the directory select as many random files as requested in the input parameter
 selectRandomImages () {
     local NUMIMAGES=$1
-    echo Select
-
     FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMIMAGES} | sed "s/\n/ /"))
 }
 
@@ -231,7 +244,7 @@ assembleBackgroundImage () {
     mv "${TEMPOUT}" "${OUTIMG}"
 }
 
-setBackground () {
+applyBackground () {
     gsettings set org.cinnamon.desktop.background picture-options "spanned"
     gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
 }
@@ -249,16 +262,25 @@ assembleOneImagePerMonitor () {
     assembleBackgroundImage
 }
 
+setBackground () {
+    local ORIGFILES=${FILES}
+    getScreenGeometry
+    if ${SINGLEIMG} ; then spanSingleImage 
+    else assembleOneImagePerMonitor 
+    fi
+    [ -f "${OUTIMG}" ] && applyBackground
+    FILES=${ORIGFILES}
+}
 #====== MAIN BODY OF THE SCRIPT ===
 
 readParameters $@
 
 if ${VALID} ; then
-    getScreenGeometry
-    if ${SINGLEIMG} ; then spanSingleImage 
-    else assembleOneImagePerMonitor 
+    if ${LOOP} ; then
+        while true; do setBackground ; sleep ${INTERVAL}; done
+    else
+        setBackground
     fi
-    [ -f "${OUTIMG}" ] && setBackground
 else
     echo "Use -h parameter to read the help"
     exit 1
