@@ -14,12 +14,16 @@
 # Author: Raul Suarez
 # https://www.usingfoss.com/
 
-SCRIPTNAME=$_
+SCRIPTNAME=$(basename $_)
+
 #====== VALIDATE DEPENDENCIES ===
 
-command -v gsettings >/dev/null 2>&1 || { echo >&2 "This script only works on systems which rely on gsettings.  Aborting."; exit 1; }
-command -v xrandr >/dev/null 2>&1 || { echo >&2 "This script only works on systems which rely on xrandr.  Aborting."; exit 1; }
-command -v identify >/dev/null 2>&1 || { echo >&2 "Please install 'imagemagick'.  Aborting."; exit 1; }
+command -v gsettings >/dev/null 2>&1 || 
+    { echo >&2 "This script only works on systems which rely on gsettings.  Aborting."; exit 1; }
+command -v xrandr >/dev/null 2>&1 || 
+    { echo >&2 "This script only works on systems which rely on xrandr.  Aborting."; exit 1; }
+command -v identify >/dev/null 2>&1 || 
+    { echo >&2 "Please install 'imagemagick'.  Aborting."; exit 1; }
 
 #====== GLOBAL VARIABLES ===
 VERSION=0.2.0
@@ -38,32 +42,42 @@ declare -a FILES=()
 #====== FUNCTIONS ===
 
 showHelp () {
-    echo 'Usage: multiMonitorBackground [OPTIONS] [FILE]
+    echo "Usage: multiMonitorBackground [OPTIONS] [FILE] [FILE] ...
 
 This script to set up a background image spaning multiple monitors 
 under Cinnamon. If no parameters are specified: A random file per monitor is 
-selected from current directory as per the default.
+selected from current directory.
+
+Note: Files are scaled and shaved to fit the display area without loosing aspect radio.
 
 It can receive the following parameters:
- [FILE]        File to display across monitors. If no file is passed and 
-               the parameter -s is specified, the script will display a random
-               image from the DIRECTORY. FILE paths must be relative to the
-               DIRECTORY unless they have an absolute path
+ FILE          Files to set as background. FILE paths must be relative to the
+               DIRECTORY unless they have an absolute path. Each FILE must be 
+               an image file.
+               - If the script receives less files than the number of monitors
+                 it will cycle through the files repeating them until all
+                 monitors have a file
+               - If the script receives no files and the parameter -s is not 
+                 specified the script will select one random image per active 
+                 monitor
  -d DIRECTORY  A directory containing image files (jpg, jpeg and png). The 
                default is the current directory
- -s            Expand a single file. The script resizes and shaves the image to
-               fit all the screeens. If no IMAGEFILE is passed, and the
-               parameter -s is present, a random file from the IMAGEDIRECTORY
-               is displayed. If a FILE is present, -s is assumed
+ -s            Span a single FILE across monitors.  
+               If no FILE is passed, and the parameter -s is present, a random
+               file from the DIRECTORY is displayed.
  -version      Displays the version number
  -verbose      Displays additional information
     
 Examples
-  setMultimonitorBackground mypicture.jpg
- 
-  setMultimonitorBackground "~/Pictures"
-    
-Note: Files are scaled and shaved to fit the display area without loosing aspect radio.
+: put the same image in each monitor
+  ${SCRIPTNAME} mypic.jpg     
+: span an image across all the monitors  
+  ${SCRIPTNAME} mypic.jpg     
+: select one random image per monitor from the directory indicated
+  ${SCRIPTNAME} -d ~/Pics
+: assign each image received to one or more monitors
+  ${SCRIPTNAME} -d ~/Pics pic1.jpg pic2.jpg 
+   
     
 Requires:
   ImageMagick
@@ -71,7 +85,7 @@ Requires:
     
 Author: Raul Suarez
 https://www.usingfoss.com/
-'
+"
 }
 
 readParameters () {
@@ -229,11 +243,6 @@ spanSingleImage () {
     convert "${FILES[0]}" -auto-orient -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} "${OUTIMG}"
 }
 
-#expandRandomImage () {
-#    local FILE=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n #1 | sed "s/\n/ /"))
-#    expandSingleImage ${FILE}
-#}
-
 assembleOneImagePerMonitor () {
     getMonitorsGeometry
     [ -z "${FILES}" ] && selectRandomImages ${NUMMONITORS}
@@ -246,8 +255,6 @@ readParameters $@
 
 if ${VALID} ; then
     getScreenGeometry
-#    if [ ${#FILES[@]} -eq 1 ] ; then expandSingleImage "${FILES[0]}"
-#    elif ${SINGLEIMG} ; then expandRandomImage 
     if ${SINGLEIMG} ; then spanSingleImage 
     else assembleOneImagePerMonitor 
     fi
