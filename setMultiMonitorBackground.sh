@@ -183,12 +183,15 @@ getMonitorsGeometry () {
         MONITORS+=($(echo ${VARARRAY[0]}x${VARARRAY[2]} +${VARARRAY[4]}+${VARARRAY[5]}))
     done
     IFS=$SAVEIFS
+    NUMMONITORS=${#MONITORS[@]}
 }
 
+# From the directory select as many random files as requested in the input parameter
 selectRandomImages () {
-    # From the directory select as many random files as there are monitors
-    NUMMONITORS=${#MONITORS[@]}
-    FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMMONITORS} | sed "s/\n/ /"))
+    local NUMIMAGES=$1
+    echo Select
+
+    FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMIMAGES} | sed "s/\n/ /"))
 }
 
 assembleBackgroundImage () {
@@ -208,6 +211,7 @@ assembleBackgroundImage () {
         convert "${FILES[$i]}" -auto-orient -scale ${GEOMETRY}^ -gravity center -extent ${GEOMETRY} ${TEMPIMG}
         composite -geometry ${OFFSET} ${TEMPIMG} ${TEMPOUT} ${TEMPOUT}
         i+=1
+        [ $i -ge ${#FILES[@]} ] && i=0
     done
     rm "${TEMPIMG}"
     mv "${TEMPOUT}" "${OUTIMG}"
@@ -218,21 +222,21 @@ setBackground () {
     gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
 }
 
-expandSingleImage () {
-    local FILE="${1}"
-    ${VERBOSE} && echo "File : ${FILE}"
+spanSingleImage () {
+    [ -z "${FILES}" ] && selectRandomImages 1
+    ${VERBOSE} && echo "File : ${FILES[0]}"
 
-    convert "${FILE}" -auto-orient -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} "${OUTIMG}"
+    convert "${FILES[0]}" -auto-orient -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} "${OUTIMG}"
 }
 
-expandRandomImage () {
-    local FILE=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n 1 | sed "s/\n/ /"))
-    expandSingleImage ${FILE}
-}
+#expandRandomImage () {
+#    local FILE=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n #1 | sed "s/\n/ /"))
+#    expandSingleImage ${FILE}
+#}
 
 assembleOneImagePerMonitor () {
     getMonitorsGeometry
-    [ -z "${FILES}" ] && selectRandomImages
+    [ -z "${FILES}" ] && selectRandomImages ${NUMMONITORS}
     assembleBackgroundImage
 }
 
@@ -242,9 +246,9 @@ readParameters $@
 
 if ${VALID} ; then
     getScreenGeometry
-#    if [ -f "${FILES[0]}" ] ; then expandSingleImage "${FILES[0]}"
-    if [ ${#FILES[@]} -eq 1 ] ; then expandSingleImage "${FILES[0]}"
-    elif ${SINGLEIMG} ; then expandRandomImage 
+#    if [ ${#FILES[@]} -eq 1 ] ; then expandSingleImage "${FILES[0]}"
+#    elif ${SINGLEIMG} ; then expandRandomImage 
+    if ${SINGLEIMG} ; then spanSingleImage 
     else assembleOneImagePerMonitor 
     fi
     [ -f "${OUTIMG}" ] && setBackground
