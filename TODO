@@ -1,6 +1,5 @@
 These are the things I'd like to do in the order I think I'll implement them:
 
-- Pass list of files to assign to monitors
 - Repeat files if directory has less images than the number of monitors
 - Loop every x minutes with the selected option
 - Create an UI to select the parameters
