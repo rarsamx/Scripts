@@ -55,7 +55,7 @@ It can receive the following parameters:
                fit all the screeens. If no IMAGEFILE is passed, and the
                parameter -s is present, a random file from the IMAGEDIRECTORY
                is displayed. If a FILE is present, -s is assumed
- -v | -version Displays the version number
+ -version      Displays the version number
  -verbose      Displays additional information
     
 Examples
