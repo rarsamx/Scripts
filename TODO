@@ -3,5 +3,5 @@ These are the things I'd like to do in the order I think I'll implement them:
 - Loop every x minutes with the selected option
 - Create an UI to select the parameters
 - Read parameters from configuration file
-- Accept wildcards
-
+- Accept wildcards for files
+- Collage mode: receives a parameter with the number of files to use for the collage
