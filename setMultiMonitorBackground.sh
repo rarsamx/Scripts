@@ -22,23 +22,38 @@ command -v identify >/dev/null 2>&1 || { echo >&2 "Please install 'imagemagick'.
 
 #====== GLOBAL VARIABLES ===
 
-PARAM="${1}"
-VALID=1
+VALID=true
 
 OUTIMG=/home/papa/.cinnamon/backgrounds/multiMonitorBackground.jpg
 
 MONITORS=()
 SCREENGEOMETRY=""
+DIRECTORY=""
+SINGLEIMG=false
+
+declare -a FILES=()
 
 #====== FUNCTIONS ===
 
 showHelp () {
-    echo 'Usage: multiMonitorBackground [IMAGEFILE] | [IMAGEDIRECTORY]
+    echo '
+Usage: multiMonitorBackground [OPTIONS] [FILE]
 
-This script creates an image to span multiple monitors under Cinnamon
-It receives only one parameter which can be
-- A single file name : The script resizes and shaves the image to fit the screeens
-- A directory with potential files: the script selects randomly one file per monitor.
+This script to set up a background image spaning multiple monitors 
+under Cinnamon. If no parameters are specified: A random file per monitor is 
+selected from current directory as per the default.
+
+It receives the following parameters:
+ [FILE]        File to display across monitors. If no file is passed and 
+               the parameter -s is specified, the script will display a random
+               image from the DIRECTORY. FILE paths must be relative to the
+               DIRECTORY unless they have an absolute path.
+ -d DIRECTORY  A directory containing image files (jpg, jpeg and png). The 
+               default is the current directory
+ -s            Expand a single file. The script resizes and shaves the image to
+               fit all the screeens. If no IMAGEFILE is passed, and the
+               parameter -s is present, a random file from the IMAGEDIRECTORY
+               is displayed. If a FILE is present, -s is assumed.
     
 Examples
   setMultimonitorBackground mypicture.jpg
@@ -54,21 +69,88 @@ Requires:
 Author: Raul Suarez
 https://www.usingfoss.com/
 '
-
 }
-isParameterValid () {
-    if [ -f "${PARAM}" ]; then
-        identify "${PARAM}" &>> /dev/null
-        VALID=$?
-    elif [ -d "${PARAM}" ]; then
-        cd "${PARAM}"
-        [ $(ls *.jpg *.png 2>/dev/null | wc -l) -gt 0 ]
-        cd - &>> /dev/null
-        VALID=$?
-    else
-        VALID=1
+
+readParameters () {
+    while [ $# -gt 0 ]
+    do
+        unset OPTIND
+        unset OPTARG
+        while getopts hd:s  options
+        do
+        case $options in
+            h)  showHelp
+                exit 0
+                ;;
+            d)  DIRECTORY="$OPTARG"
+                ;;
+            s)  SINGLEIMG=true
+                ;;
+            *)  exit 1
+        esac
+     done
+     shift $((OPTIND-1))
+     FILES+=(${1})
+     shift
+    done
+
+    [ -n "${DIRECTORY}" ] && [ -n "${FILES}" ] && assembleFullFileNames
+    echo "DIRECTORY : ${DIRECTORY}"
+    echo "FILES : ${FILES[@]}"
+
+    validateParameters
+    [ -z "${DIRECTORY}" ] && DIRECTORY="."
+}
+
+assembleFullFileNames () {
+
+    declare -i i=0
+    for FILE in "${FILES[@]}"
+    do
+        if [ "$(readlink -f ${FILE})" != "${FILE}" ]; then
+            FILES[$i]="${DIRECTORY}/${FILES[$i]}"
+        fi
+        i+=1
+    done
+}
+
+countImagesInDir () {
+    local TESTDIR="${1}"
+    echo $(ls "${TESTDIR}"/*.jpg "${TESTDIR}"/*.jpeg "${TESTDIR}"/*.png 2>/dev/null | wc -l)
+}
+
+validateParameters () {
+    # Validate directory
+    if [ -n "${DIRECTORY}" ] ; then
+        [ $(countImagesInDir "${DIRECTORY}") -le 0 ] && VALID=false 
+        ! ${VALID}  &&  
+            echo "ERROR: Invalid directory name \"${DIRECTORY}\" or directory does not contain image files " && 
+            return 1
     fi
-    return ${VALID}
+
+    # Validate files
+    if [ -n "${FILES}" ] ; then
+        for FILE in "${FILES[@]}"
+        do
+            [ -f "${FILE}" ] && identify "${FILE}" &>> /dev/null 
+            [ "$?" -ne 0 ] && VALID=false
+            ! ${VALID} && 
+                echo "ERROR: Invalid file name ${FILE} or file is not an image file" && 
+                return 1
+        done
+    fi
+
+    # Validate current directory if no directory or files were passed
+    if [ -z "${DIRECTORY}" ] && [ -z "${FILES}" ] ; then
+        [ $(countImagesInDir ".") -le 0 ] && VALID=false 
+        ! ${VALID} &&  
+            echo "ERROR: Current directory does not contain image files " && 
+            return 1
+    fi
+
+    ${SINGLEIMG} && [ ${#FILES[@]} -gt 1 ] && echo "Warning single file parameter but two files specified"
+
+    return 0
 }
 
 getScreenGeometry () {
@@ -98,8 +180,10 @@ assembleBackgroundImage () {
 
     # From the directory select as many random files as there are monitors
     NUMMONITORS=${#MONITORS[@]}
-    FILES=($(ls *.jpg *.png 2>/dev/null | sort -R | tail -n ${NUMMONITORS} | sed "s/\n/ /"))
+    FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMMONITORS} | sed "s/\n/ /"))
 
+echo NUMMONITORS=$NUMMONITORS
+echo files=${FILES[@]}
     i=0
     for MONITOR in "${MONITORS[@]}"
     do
@@ -113,30 +197,37 @@ assembleBackgroundImage () {
 }
 
 setBackground () {
-gsettings set org.cinnamon.desktop.background picture-options "spanned"
-gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
+    gsettings set org.cinnamon.desktop.background picture-options "spanned"
+    gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
 }
 
 expandSingleImage () {
-    FILE="${1}"
+    local FILE="${1}"
     convert "${FILE}" -auto-orient -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} "${OUTIMG}"
 }
 
-assembleOneImagePerMonitor () {
-    cd "${PARAM}"
+expandRandomImage () {
+    local FILE=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n 1 | sed "s/\n/ /"))
+    expandSingleImage ${FILE}
+}
 
+assembleOneImagePerMonitor () {
     getMonitorsGeometry
     assembleBackgroundImage
-    cd - &>> /dev/null
 }
 
 #====== MAIN BODY OF THE SCRIPT ===
 
-isParameterValid
-if [ ${VALID} -eq 0 ]; then
+echo ${@}
+readParameters $@
+
+echo valid=${VALID}
+if ${VALID} ; then
     getScreenGeometry
-    [ -f "${PARAM}" ] && expandSingleImage "${PARAM}"
-    [ -d "${PARAM}" ] && assembleOneImagePerMonitor "${PARAM}"
+    if [ -f "${FILES[0]}" ] ; then expandSingleImage "${FILES[0]}"
+    elif ${SINGLEIMG} ; then expandRandomImage 
+    else assembleOneImagePerMonitor 
+    fi
     [ -f "${OUTIMG}" ] && setBackground
 else
     showHelp
