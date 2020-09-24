@@ -14,6 +14,7 @@
 # Author: Raul Suarez
 # https://www.usingfoss.com/
 
+SCRIPTNAME=$_
 #====== VALIDATE DEPENDENCIES ===
 
 command -v gsettings >/dev/null 2>&1 || { echo >&2 "This script only works on systems which rely on gsettings.  Aborting."; exit 1; }
@@ -30,30 +31,32 @@ MONITORS=()
 SCREENGEOMETRY=""
 DIRECTORY=""
 SINGLEIMG=false
+VERBOSE=false
 
 declare -a FILES=()
 
 #====== FUNCTIONS ===
 
 showHelp () {
-    echo '
-Usage: multiMonitorBackground [OPTIONS] [FILE]
+    echo 'Usage: multiMonitorBackground [OPTIONS] [FILE]
 
 This script to set up a background image spaning multiple monitors 
 under Cinnamon. If no parameters are specified: A random file per monitor is 
 selected from current directory as per the default.
 
-It receives the following parameters:
+It can receive the following parameters:
  [FILE]        File to display across monitors. If no file is passed and 
                the parameter -s is specified, the script will display a random
                image from the DIRECTORY. FILE paths must be relative to the
-               DIRECTORY unless they have an absolute path.
+               DIRECTORY unless they have an absolute path
  -d DIRECTORY  A directory containing image files (jpg, jpeg and png). The 
                default is the current directory
  -s            Expand a single file. The script resizes and shaves the image to
                fit all the screeens. If no IMAGEFILE is passed, and the
                parameter -s is present, a random file from the IMAGEDIRECTORY
-               is displayed. If a FILE is present, -s is assumed.
+               is displayed. If a FILE is present, -s is assumed
+ -v | -version Displays the version number
+ -verbose      Displays additional information
     
 Examples
   setMultimonitorBackground mypicture.jpg
@@ -76,13 +79,22 @@ readParameters () {
     do
         unset OPTIND
         unset OPTARG
-        while getopts hd:s  options
+        while getopts hsv:d:  options
         do
         case $options in
             h)  showHelp
                 exit 0
                 ;;
-            v)  echo ${VERSION}
+            v)  local SECONDPART="$OPTARG"
+                [ "${SECONDPART}" != "ersion" ] && [ "${SECONDPART}" != "erbose" ] && 
+                    echo "Invalid parameter -v$SECONDPART. Use parameter -h for help." && 
+                    exit 1
+                [ ${SECONDPART} == "ersion" ] && 
+                    echo Version ${VERSION} && 
+                    exit 0
+                [ ${SECONDPART} == "erbose" ] && 
+                    VERBOSE=true
+                ;;
             d)  DIRECTORY="$OPTARG"
                 ;;
             s)  SINGLEIMG=true
@@ -96,8 +108,10 @@ readParameters () {
     done
 
     [ -n "${DIRECTORY}" ] && [ -n "${FILES}" ] && assembleFullFileNames
-    echo "DIRECTORY : ${DIRECTORY}"
-    echo "FILES : ${FILES[@]}"
+
+    ${VERBOSE} && echo "Directory : ${DIRECTORY}"
+    ${VERBOSE} && [ -n "${FILES}" ] && echo "Files : ${FILES[@]}"
+    ${VERBOSE} && echo "Single image : ${SINGLEIMG}"
 
     validateParameters
     [ -z "${DIRECTORY}" ] && DIRECTORY="."
@@ -183,15 +197,15 @@ assembleBackgroundImage () {
     NUMMONITORS=${#MONITORS[@]}
     FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMMONITORS} | sed "s/\n/ /"))
 
-echo NUMMONITORS=$NUMMONITORS
-echo files=${FILES[@]}
     i=0
     for MONITOR in "${MONITORS[@]}"
     do
         GEOMETRY=$(echo ${MONITOR} | cut -s -d " " -f 1)
         OFFSET=$(echo ${MONITOR} | cut -s -d " " -f 2)
-        convert "${FILES[$((i++))]}" -auto-orient -scale ${GEOMETRY}^ -gravity center -extent ${GEOMETRY} ${TEMPIMG}
+        ${VERBOSE} && echo "Monitor $i : ${GEOMETRY}${OFFSET} : ${FILES[$i]}"
+        convert "${FILES[$i]}" -auto-orient -scale ${GEOMETRY}^ -gravity center -extent ${GEOMETRY} ${TEMPIMG}
         composite -geometry ${OFFSET} ${TEMPIMG} ${TEMPOUT} ${TEMPOUT}
+        i+=1
     done
     rm "${TEMPIMG}"
     mv "${TEMPOUT}" "${OUTIMG}"
@@ -204,6 +218,8 @@ setBackground () {
 
 expandSingleImage () {
     local FILE="${1}"
+    ${VERBOSE} && echo "File : ${FILE}"
+
     convert "${FILE}" -auto-orient -scale ${SCREENGEOMETRY}^ -gravity center -extent ${SCREENGEOMETRY} "${OUTIMG}"
 }
 
@@ -219,10 +235,8 @@ assembleOneImagePerMonitor () {
 
 #====== MAIN BODY OF THE SCRIPT ===
 
-echo ${@}
 readParameters $@
 
-echo valid=${VALID}
 if ${VALID} ; then
     getScreenGeometry
     if [ -f "${FILES[0]}" ] ; then expandSingleImage "${FILES[0]}"
@@ -231,7 +245,7 @@ if ${VALID} ; then
     fi
     [ -f "${OUTIMG}" ] && setBackground
 else
-    showHelp
+    echo "Use -h parameter to read the help"
     exit 1
 fi
 
