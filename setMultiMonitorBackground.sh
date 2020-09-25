@@ -29,7 +29,7 @@ command -v identify >/dev/null 2>&1 ||
 VERSION=0.2.0
 VALID=true
 
-OUTIMG=/home/papa/.cinnamon/backgrounds/multiMonitorBackground.jpg
+OUTIMG=${HOME}/.cinnamon/backgrounds/multiMonitorBackground.jpg
 
 MONITORS=()
 SCREENGEOMETRY=""
