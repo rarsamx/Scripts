@@ -1,18 +1,16 @@
 #!/bin/bash
 
-# This script creates an image to span multiple monitors under Cinnamon
-# It receives only one parameter which can be
-# - A single file name : The script resizes and shaves the image to fit the screeens
-# - A directory with potential files: the script selects randomly one file per monitor.
-#
-# Note: Files are scaled and shaved to fit the display area without loosing aspect radio.
+#This script minimizes all the windows from a given monitor. If they are already
+#minimized, it restores them
 #
 #Requires:
-#  ImageMagick
+#  wmctrl
 #  xrandr
-#
-# Author: Raul Suarez
-# https://www.usingfoss.com/
+#  xdotool
+#    
+#Author: Raul Suarez
+#https://www.usingfoss.com/
+
 
 SCRIPTNAME=$(basename $_)
 
@@ -63,6 +61,7 @@ https://www.usingfoss.com/
 
 readParameters () {
     MONITORNUM="${1}"
+    SAVEFILE+=${MONITORNUM}
     validateParameters
 }
 
@@ -96,6 +95,7 @@ minimizeWindows () {
     local MONITOR
     local WINDOW
 
+    echo "${SAVEFILE}"
     > "${SAVEFILE}"
     getWindowList
     getMonitorsGeometry
@@ -126,6 +126,8 @@ minimizeWindows () {
 }
 
 restoreWindows () {
+    echo "${SAVEFILE}"
+
     local CURRENTWIN=$(xdotool getactivewindow)
     while read LINE; do
         WINID=$(echo ${LINE} | cut -s -d "," -f 1)
