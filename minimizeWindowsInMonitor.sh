@@ -95,7 +95,6 @@ minimizeWindows () {
     local MONITOR
     local WINDOW
 
-    echo "${SAVEFILE}"
     > "${SAVEFILE}"
     getWindowList
     getMonitorsGeometry
@@ -126,8 +125,6 @@ minimizeWindows () {
 }
 
 restoreWindows () {
-    echo "${SAVEFILE}"
-
     local CURRENTWIN=$(xdotool getactivewindow)
     while read LINE; do
         WINID=$(echo ${LINE} | cut -s -d "," -f 1)
