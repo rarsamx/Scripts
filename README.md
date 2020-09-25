@@ -10,6 +10,7 @@ Raul Suarez
 
 # Index
 1. [setMultiMonitorBackground](setMultiMonitorBackground.sh): Sets the background in a multimonitor set up under Cinammon with either one image spanned across or one image per monitor
+1. [minimizeWindowsInMonitor](minimizeWindowsInMonitor.sh): Minimizes all the windows in the monitor indicated as a parameter
 
 
 
