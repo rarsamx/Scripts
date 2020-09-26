@@ -102,39 +102,49 @@ readParameters () {
     INTERVAL=""
     FILES=()
 
-    while [ $# -gt 0 ]
-    do
+    while [ $# -gt 0 ] ; do
         unset OPTIND
         unset OPTARG
-        while getopts hsv:d:t:  options
-        do
-        case $options in
-            h)  showHelp
-                exit 0
-                ;;
-            v)  local SECONDPART="$OPTARG"
-                [ "${SECONDPART}" != "ersion" ] && [ "${SECONDPART}" != "erbose" ] && 
-                    echo "Invalid parameter -v$SECONDPART. Use parameter -h for help." && 
-                    exit 1
-                [ ${SECONDPART} == "ersion" ] && 
-                    echo Version ${VERSION} && 
+        while getopts :hsv:d:t:  options; do
+            case $options in
+                h)  showHelp
                     exit 0
-                [ ${SECONDPART} == "erbose" ] && 
-                    VERBOSE=true
-                ;;
-            d)  DIRECTORY="$OPTARG"
-                ;;
-            s)  SINGLEIMG=true
-                ;;
-            t)  INTERVAL=$((OPTARG * 60))
-                LOOP=true
-                ;;
-            *)  exit 1
-        esac
-     done
-     shift $((OPTIND-1))
-     FILES+=(${1})
-     shift
+                    ;;
+                v)  local SECONDPART="$OPTARG"
+                    [ "${SECONDPART}" != "ersion" ] && [ "${SECONDPART}" != "erbose" ] && 
+                        echo "Invalid parameter -v$SECONDPART. Use -h for help." && 
+                        exit 1
+                    [ ${SECONDPART} == "ersion" ] && 
+                        echo Version ${VERSION} && 
+                        exit 0
+                    [ ${SECONDPART} == "erbose" ] && 
+                        VERBOSE=true
+                    ;;
+                d)  DIRECTORY="$OPTARG"
+                    ;;
+                s)  SINGLEIMG=true
+                    ;;
+                t)  INTERVAL=$((OPTARG * 60))
+                    LOOP=true
+                    ;;
+                :)  case $OPTARG in
+                        v)  echo "Invalid parameter -v. Use -h for help." >&2
+                            ;;
+                        t)  echo "Parameter -t usage -t <MINUTES>. Use -h for help." >&2
+                            ;;
+                        d)  echo "Parameter -d usage -d <DIRECTORY>. Use -h for help." >&2
+                            ;;
+                    esac
+                    exit 1
+                    ;;
+                ?)  echo "Invalid parameter -$OPTARG. Use -h for help." >&2
+                    exit 1
+                    ;;
+            esac
+        done
+        shift $((OPTIND-1))
+        FILES+=(${1})
+        shift
     done
 
     [ -n "${DIRECTORY}" ] && [ -n "${FILES}" ] && assembleFullFileNames
