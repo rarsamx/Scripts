@@ -26,9 +26,9 @@ command -v identify >/dev/null 2>&1 ||
     { echo >&2 "Please install 'imagemagick'.  Aborting."; exit 1; }
 
 #====== GLOBAL VARIABLES ===
-VERSION=0.2.0
+VERSION=0.2.2
 VALID=true
-
+FORMATS="jpg|jpeg|png"
 OUTIMG=${HOME}/.cinnamon/backgrounds/multiMonitorBackground.jpg
 
 MONITORS=()
@@ -40,6 +40,9 @@ LOOP=false
 INTERVAL=""
 
 declare -a FILES=()
+
+# Allow extended pattern substitutions
+shopt -s extglob
 
 #====== FUNCTIONS ===
 
@@ -159,7 +162,8 @@ assembleFullFileNames () {
 
 countImagesInDir () {
     local TESTDIR="${1}"
-    echo $(ls "${TESTDIR}"/*.jpg "${TESTDIR}"/*.jpeg "${TESTDIR}"/*.png 2>/dev/null | wc -l)
+#    echo $(ls "${TESTDIR}"/*.jpg "${TESTDIR}"/*.jpeg "${TESTDIR}"/*.png 2>/dev/null | wc -l)
+    echo $(ls "${TESTDIR}"/*.@(${FORMATS}) 2>/dev/null | wc -l)
 }
 
 validateParameters () {
@@ -218,7 +222,7 @@ getMonitorsGeometry () {
 # From the directory select as many random files as requested in the input parameter
 selectRandomImages () {
     local NUMIMAGES=$1
-    FILES=($(ls "${DIRECTORY}"/*.jpg "${DIRECTORY}"/*.jpeg "${DIRECTORY}"/*.png 2>/dev/null | sort -R | tail -n ${NUMIMAGES} | sed "s/\n/ /"))
+    FILES=($(ls "${DIRECTORY}"/*.@(${FORMATS}) 2>/dev/null | sort -R | tail -n ${NUMIMAGES} | sed "s/\n/ /"))
 }
 
 assembleBackgroundImage () {
