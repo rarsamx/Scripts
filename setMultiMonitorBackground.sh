@@ -112,8 +112,8 @@ readParameters () {
                     ;;
                 v)  local SECONDPART="$OPTARG"
                     [ "${SECONDPART}" != "ersion" ] && [ "${SECONDPART}" != "erbose" ] && 
-                        echo "Invalid parameter -v$SECONDPART. Use -h for help." && 
-                        exit 1
+                        echo "Invalid parameter -v$SECONDPART." && 
+                        VALID=false
                     [ ${SECONDPART} == "ersion" ] && 
                         echo Version ${VERSION} && 
                         exit 0
@@ -128,17 +128,17 @@ readParameters () {
                     LOOP=true
                     ;;
                 :)  case $OPTARG in
-                        v)  echo "Invalid parameter -v. Use -h for help." >&2
+                        v)  echo "Invalid parameter -v." >&2
                             ;;
-                        t)  echo "Parameter -t usage -t <MINUTES>. Use -h for help." >&2
+                        t)  echo "Parameter -t usage -t <MINUTES>." >&2
                             ;;
-                        d)  echo "Parameter -d usage -d <DIRECTORY>. Use -h for help." >&2
+                        d)  echo "Parameter -d usage -d <DIRECTORY>." >&2
                             ;;
                     esac
-                    exit 1
+                    VALID=false
                     ;;
-                ?)  echo "Invalid parameter -$OPTARG. Use -h for help." >&2
-                    exit 1
+                ?)  echo "Invalid parameter -$OPTARG." >&2
+                    VALID=false
                     ;;
             esac
         done
@@ -154,7 +154,7 @@ readParameters () {
     ${VERBOSE} && echo "Single image : ${SINGLEIMG}"
     ${VERBOSE} && ${LOOP} && echo "Refresh every : $((INTERVAL / 60)) minutes"
 
-    validateParameters
+    $VALID && validateParameters
     [ -z "${DIRECTORY}" ] && DIRECTORY="."
 }
 
@@ -181,7 +181,7 @@ validateParameters () {
     if [ -n "${DIRECTORY}" ] ; then
         [ $(countImagesInDir "${DIRECTORY}") -le 0 ] && VALID=false 
         ! ${VALID}  &&  
-            echo "ERROR: Invalid directory name \"${DIRECTORY}\" or directory does not contain image files " && 
+            echo "ERROR: Invalid directory name \"${DIRECTORY}\" or directory does not contain image files." && 
             return 1
     fi
 
@@ -192,7 +192,7 @@ validateParameters () {
             [ -f "${FILE}" ] && identify "${FILE}" &>> /dev/null 
             [ "$?" -ne 0 ] && VALID=false
             ! ${VALID} && 
-                echo "ERROR: Invalid file name ${FILE} or file is not an image file" && 
+                echo "ERROR: Invalid file name ${FILE} or file is not an image file." && 
                 return 1
         done
     fi
@@ -296,7 +296,7 @@ if ${VALID} ; then
         setBackground
     fi
 else
-    echo "Use -h parameter to read the help"
+    echo "Use -h for help."
     exit 1
 fi
 
