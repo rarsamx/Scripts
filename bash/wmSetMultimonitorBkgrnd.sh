@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # This script creates an image to span multiple monitors under Cinnamon
 # It receives only one parameter which can be
@@ -13,11 +13,9 @@
 #
 # Author: Raul Suarez
 # https://www.usingfoss.com/
-#
-# License: GPL v3.0
 
-#SCRIPTNAME=$(basename $_)
-SCRIPTNAME=${0##*/}
+SCRIPTNAME=$(basename $_)
+
 #====== VALIDATE DEPENDENCIES ===
 
 command -v gsettings >/dev/null 2>&1 || 
