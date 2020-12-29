@@ -1,0 +1,56 @@
+#!/bin/sh
+# Run as mdm user just before starting the greeter
+
+PATH="/usr/bin:$PATH"
+OLD_IFS=$IFS
+
+xrandr --newmode "1920x1080"  173.00  1920 2048 2248 2576  1080 1083 1088 1120 -hsync +vsync
+xrandr --addmode VGA1 "1920x1080"
+#xrandr --output VGA1 --mode 1920x1080_60.00
+
+if test -x "/sbin/initctl" ; then
+  /sbin/initctl -q emit login-session-start DISPLAY_MANAGER=mdm
+fi
+
+mdmwhich () {
+  COMMAND="$1"
+  OUTPUT=
+  IFS=:
+  for dir in $PATH
+  do
+    if test -x "$dir/$COMMAND" ; then
+      if test "x$OUTPUT" = "x" ; then
+        OUTPUT="$dir/$COMMAND"
+      fi
+    fi
+  done
+  IFS=$OLD_IFS 
+  echo "$OUTPUT"
+}
+
+sysresources=/etc/X11/Xresources
+
+# merge in defaults
+if [ -f "$sysresources" ]; then
+    xrdb -merge "$sysresources"
+fi
+
+sysmodmap=/etc/X11/Xmodmap
+
+XMODMAP=`mdmwhich xmodmap`
+if [ "x$XMODMAP" != "x" ] ; then
+  if [ -f $sysmodmap ]; then
+    $XMODMAP $sysmodmap
+  fi
+fi
+
+mode="$(xrandr -q|/bin/grep -A5 "VGA1 connected"| tail -1 |awk '{ print $1 }')"
+if [ -n "$mode" ]; then
+  xrandr --output LVDS1 --off
+  xrandr --output VGA1 --primary --mode $mode
+  echo $mode > /home/sergiane/log.txt
+fi
+
+DISPLAY=:0 /usr/bin/syndaemon -d -i 1.0 -t -K -R
+
+exit 0
