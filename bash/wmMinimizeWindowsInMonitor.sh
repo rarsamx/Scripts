@@ -7,12 +7,13 @@
 #  wmctrl
 #  xrandr
 #  xdotool
-#    
-#Author: Raul Suarez
-#https://www.usingfoss.com/
+#
+# Author: Raul Suarez
+# https://www.usingfoss.com/
+# License: GPL v3.0
 
-
-SCRIPTNAME=$(basename $_)
+#SCRIPTNAME=$(basename $0)
+SCRIPTNAME=${0##*/}
 
 #====== VALIDATE DEPENDENCIES ===
 
