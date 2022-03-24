@@ -7,6 +7,8 @@
 # License: GPL v3.0
 
 while true; do
-    nitrogen --set-zoom-fill --random
-    sleep 600 
+#    nitrogen --set-zoom-fill --random
+    nitrogen --set-zoom-fill --random --head=0
+    nitrogen --set-zoom-fill --random --head=1
+    sleep 60 
 done
