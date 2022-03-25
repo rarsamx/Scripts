@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 #
 # This script monitors the changes to the 
+
+uid=$(id -u)
+
+pipeName="/run/user/${uid}/im_pipe"
+
 outputIM () {
     IM=$(gdbus call -e -d org.fcitx.Fcitx -o "/inputmethod" -m "org.fcitx.Fcitx.InputMethod.GetCurrentIM" | sed -e "s/('\(.*\)',)/\1/")
     
@@ -18,7 +23,7 @@ outputIM () {
             imCode="PY"
             ;;
     esac
-    echo $imCode > /run/user/1000/im_pipe
+    echo $imCode > ${pipeName}
 }
 
 
@@ -26,10 +31,10 @@ outputIM () {
 # Start of the script
 
 # Create named pipe to write the input method to
-if [ ! -p /run/user/1000/im_pipe ]
+if [ ! -p ${pipeName} ]
 then
-    rm -f /run/user/1000/im_pipe
-    mkfifo /run/user/1000/im_pipe
+    rm -f ${pipeName}
+    mkfifo ${pipeName}
 fi
 
 # Pouplate the pipe with the current Input Method
