@@ -28,7 +28,7 @@ APPLIST_TO_TERMINATE=(
 )
 
 close_windows () {
-	wmctrl -l > ~/log.txt
+	wmctrl -l 
 	wmctrl -l | awk '{print $1}' | while read -r wId
 	do
 		wmctrl -i -c $wId
