@@ -7,10 +7,15 @@
 # This scrpit receives the parameters of pacmd
 # If no parameters are sent, then it just outputs the current volume
 
+set uid (id -u)
+
+set pipeName "/run/user/$uid/micvol_pipe"
+
+
 # Create named pipe to write the input method to
-if test ! -p /run/user/1000/micvol_pipe 
-    rm -f /run/user/1000/micvol_pipe
-    mkfifo /run/user/1000/micvol_pipe
+if test ! -p $pipeName 
+    rm -f $pipeName
+    mkfifo $pipeName
 end
 
 if test "$argv" = "toggle"
@@ -34,7 +39,7 @@ else
        set volDisplay '<icon=MicVol-high.xpm/>'
    end
 
-   echo "<fc=lightblue><fn=1>"$micVol"</fn></fc> " > /run/user/1000/micvol_pipe
+   echo "<fc=lightblue><fn=1>"$micVol"</fn></fc> " > $pipeName
    sleep .2
 end
-echo $volDisplay > /run/user/1000/micvol_pipe
+echo $volDisplay > $pipeName
