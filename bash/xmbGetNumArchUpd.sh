@@ -4,18 +4,22 @@
 #https://www.usingfoss.com/
 #License: GPL v3.0
 
+uid=$(id -u)
+
+pipeName="/run/user/${uid}/archupd_pipe"
+
 # Create named pipe to write the input method to
-if [ ! -p /run/user/1000/archupd_pipe ]
+if [ ! -p ${pipeName} ]
 then
-    rm -f /run/user/1000/archupd_pipe
-    mkfifo /run/user/1000/archupd_pipe
+    rm -f ${pipeName}
+    mkfifo ${pipeName}
 fi
 
 numUpd=$(checkupdates | wc -l)
 
 if [ $numUpd -eq 0 ] 
 then 
-    echo "<icon=Security-low.xpm/>" > /run/user/1000/archupd_pipe
+    echo "<icon=Security-low.xpm/>" > ${pipeName}
 else
-    echo "<icon=Security-high.xpm/> $numUpd" > /run/user/1000/archupd_pipe
+    echo "<icon=Security-high.xpm/> $numUpd" > ${pipeName}
 fi 
