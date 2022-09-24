@@ -174,14 +174,13 @@ assembleFullFileNames () {
 
 countImagesInDir () {
     local TESTDIR="${1}"
-#    echo $(ls "${TESTDIR}"/*.jpg "${TESTDIR}"/*.jpeg "${TESTDIR}"/*.png 2>/dev/null | wc -l)
     echo $(ls "${TESTDIR}"/*.@(${FORMATS}) 2>/dev/null | wc -l)
 }
 
 validateParameters () {
     # Validate directory
     if [ -n "${DIRECTORY}" ] ; then
-        [ $(countImagesInDir "${DIRECTORY}") -le 0 ] && VALID=false 
+        [ $(countImagesInDir "${DIRECTORY}") -le 0 ] && VALID=false
         ! ${VALID}  &&  
             echo "ERROR: Invalid directory name \"${DIRECTORY}\" or directory does not contain image files." && 
             return 1
@@ -234,7 +233,7 @@ getMonitorsGeometry () {
 # From the directory select as many random files as requested in the input parameter
 selectRandomImages () {
     local NUMIMAGES=$1
-    FILES=($(ls "${DIRECTORY}"/*.@(${FORMATS}) 2>/dev/null | sort -R | tail -n ${NUMIMAGES} | sed "s/\n/ /"))
+    readarray -t FILES < <(ls "${DIRECTORY}"/*.@(${FORMATS}) 2>/dev/null | sort -R | tail -n ${NUMIMAGES} | sed "s/\n/ /" )
 }
 
 assembleBackgroundImage () {
@@ -261,8 +260,16 @@ assembleBackgroundImage () {
 }
 
 applyBackground () {
-    gsettings set org.cinnamon.desktop.background picture-options "spanned"
-    gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
+    findCinnamon=`gsettings get org.cinnamon.desktop.background picture-options 2> /dev/null`
+    if [ ! -z "$findCinnamon" ]; then
+	    gsettings set org.cinnamon.desktop.background picture-options "spanned"
+	    gsettings set org.cinnamon.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
+    fi
+    findGnome=`gsettings get org.gnome.desktop.background picture-options 2> /dev/null`
+    if [ ! -z "$findGnome" ]; then
+	    gsettings set org.gnome.desktop.background picture-options "spanned"
+	    gsettings set org.gnome.desktop.background picture-uri "file://$(readlink -f ${OUTIMG})"
+    fi
 }
 
 spanSingleImage () {
@@ -289,9 +296,12 @@ setBackground () {
 }
 #====== MAIN BODY OF THE SCRIPT ===
 
-readParameters $@
+readParameters "$@"
 
 if ${VALID} ; then
+    if [ ! -f `dirname ${OUTIMG}` ]; then
+	    mkdir -p `dirname ${OUTIMG}`
+    fi
     if ${LOOP} ; then
         while true; do setBackground ; sleep ${INTERVAL}; done
     else
