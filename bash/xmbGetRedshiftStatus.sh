@@ -16,7 +16,7 @@ fi
 
 if [ $(ps -aux | grep redshift | wc -l) -gt 1 ]
 then
-    if [ ${newperiod} == "none" ]
+    if [ "${newperiod}" ==  "none" ]
     then
         echo 'off' > /run/user/1000/redshift_pipe
     else
