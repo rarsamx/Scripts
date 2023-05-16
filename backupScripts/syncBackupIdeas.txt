@@ -1,0 +1,8 @@
+Only delete files older than the last back up that are not on the source directory
+
+s=source directory
+d=destination directory
+
+find all source directories
+for each source directory without path
+Get all the destination 
