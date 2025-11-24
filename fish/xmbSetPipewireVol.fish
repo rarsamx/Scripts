@@ -23,15 +23,15 @@ end
 set speakerismuted (wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -o MUTED)
 
 if test "$speakerismuted" = 'MUTED'
-    set volDisplay '<icon=Volume-muted.xbm/>'
+    set volDisplay '<icon=Volume-muted.xpm/>'
 else
    set speakerVol (math (echo  (wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -o '[0-9.]*') \* 100))
    if test $speakerVol -le 33
-       set volDisplay '<icon=Volume-low.xbm/>'
+       set volDisplay '<icon=Volume-low.xpm/>'
     else if test $speakerVol -le 67
-       set volDisplay '<icon=Volume-medium.xbm/>'
+       set volDisplay '<icon=Volume-medium.xpm/>'
     else
-       set volDisplay '<icon=Volume-high.xbm/>'
+       set volDisplay '<icon=Volume-high.xpm/>'
    end
 
    echo "<fc=lightblue><fn=1>"$speakerVol"</fn></fc> " > /run/user/1000/volume_pipe

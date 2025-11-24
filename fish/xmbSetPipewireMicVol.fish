@@ -23,15 +23,15 @@ end
 set micismuted (wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -o MUTED)
 
 if test "$micismuted" = 'MUTED'
-    set volDisplay '<icon=MicVol-muted.xbm/>'
+    set volDisplay '<icon=MicVol-muted.xpm/>'
 else
    set micVol (math (echo  (wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -o '[0-9.]*') \* 100))
    if test $micVol -le 33
-       set volDisplay '<icon=MicVol-low.xbm/>'
+       set volDisplay '<icon=MicVol-low.xpm/>'
     else if test $micVol -le 67
-       set volDisplay '<icon=MicVol-medium.xbm/>'
+       set volDisplay '<icon=MicVol-medium.xpm/>'
     else
-       set volDisplay '<icon=MicVol-high.xbm/>'
+       set volDisplay '<icon=MicVol-high.xpm/>'
    end
 
    echo "<fc=lightblue><fn=1>"$micVol"</fn></fc> " > /run/user/1000/micvol_pipe
