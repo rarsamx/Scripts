@@ -6,20 +6,26 @@ uid=$(id -u)
 
 pipeName="/run/user/${uid}/im_pipe"
 
+# Commented out what would be necessary for Fcitx5, however we aren't receiving a DBus event
 outputIM () {
     IM=$(gdbus call -e -d org.fcitx.Fcitx -o "/inputmethod" -m "org.fcitx.Fcitx.InputMethod.GetCurrentIM" | sed -e "s/('\(.*\)',)/\1/")
     
+    #IM=$(qdbus "org.fcitx.Fcitx5" "/controller" "org.fcitx.Fcitx.Controller1.CurrentInputMethod" | sed -e "s/('\(.*\)',)/\1/")
+    #IM=$(fcitx5-remote -n)
     case $IM in
         fcitx-keyboard-us)
+        #keyboard-us)
             imCode="US"
             ;;
         fcitx-keyboard-us-intl)
+        #keyboard-us-intl)
             imCode="US intl"
             ;;
         pinyin | sunpinyin)
             imCode="CH"
             ;;
         fcitx-keyboard-cn-altgr-pinyin)
+        #keyboard-cn-altgr-pinyin)
             imCode="PY"
             ;;
     esac
@@ -41,7 +47,7 @@ fi
 outputIM
 
 # only monitor if there isn't another script already running
-if [ $(ps -aux | grep "bash /home/papa/bin/xmbMonitorIMChanges" | wc -l) -le 3 ]
+if [ $(ps -aux | grep "$(which xmbMonitorIMChanges)" | wc -l) -le 3 ]
 then
 
 # Monitor the dbus for changes to the current input method
